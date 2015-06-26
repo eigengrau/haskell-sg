@@ -47,12 +47,12 @@ class (VectorNum rel, Coord rel, Coord pt, IsomorphicVectors rel pt, IsomorphicV
   scaleRel :: Num a => a -> rel a -> rel a
   scaleRel a = fmapNum1 (*a)
   -- | Adds a relative (free) vector to a given point.
-  plusDir :: Num a => pt a -> rel a -> pt a
+  plusDir :: (Num a, Eq a, Show a) => pt a -> rel a -> pt a
   -- | Determines the relative (free) vector /to/ the first parameter /from/ the
   -- second parameter.  So:
   --
   -- > Point2 (1,8) `fromPt` Point2 (3,4) == Point2 (-2,3)
-  fromPt :: Num a => pt a -> pt a -> rel a
+  fromPt :: (Num a, Show a, Eq a) => pt a -> pt a -> rel a
   -- | Given a line, converts it back into its point and relative vector.  It should
   -- always be the case that @uncurry makeLine . getLineVecs@ is the identity function.
   getLineVecs :: Num a => ln a -> (pt a, rel a)
@@ -74,19 +74,19 @@ instance Geometry Triple Triple LineTriple where
 
 
 -- | Adds the negation of the relative (free) vector to the point.
-minusDir :: (Num a, Geometry rel pt ln) => pt a -> rel a -> pt a
+minusDir :: (Eq a, Num a, Geometry rel pt ln, Show a) => pt a -> rel a -> pt a
 minusDir p r = p `plusDir` fmapNum1 negate r
 
 -- | The flipped version of 'fromPt'.
-toPt :: (Geometry rel pt ln, Num a) => pt a -> pt a -> rel a
+toPt :: (Geometry rel pt ln, Num a, Show a, Eq a) => pt a -> pt a -> rel a
 toPt = flip fromPt
 
 -- | Gets the line /from/ the first point, /to/ the second point.
-lineTo :: (Num a, Geometry rel pt ln) => pt a -> pt a -> ln a
+lineTo :: (Num a, Geometry rel pt ln, Show a, Eq a) => pt a -> pt a -> ln a
 lineTo a b = makeLine a (b `fromPt` a)
 
 -- | The flipped version of 'lineTo'.
-lineFrom :: (Num a, Geometry rel pt ln) => pt a -> pt a -> ln a
+lineFrom :: (Eq a, Num a, Geometry rel pt ln, Show a) => pt a -> pt a -> ln a
 lineFrom = flip lineTo
 
 -- | Gets the point at the start of the line.
@@ -98,7 +98,7 @@ getLineDir :: (Num a, Geometry rel pt ln) => ln a -> rel a
 getLineDir = snd . getLineVecs
 
 -- | Gets the point at the end of the line.
-getLineEnd :: (Geometry rel pt ln, Num a) => ln a -> pt a
+getLineEnd :: (Geometry rel pt ln, Num a, Eq a, Show a) => ln a -> pt a
 getLineEnd = uncurry plusDir . getLineVecs
 
 -- | Alters the line to the given length, but with the same start point and direction.
@@ -107,14 +107,14 @@ makeLength x = uncurry makeLine . second (scaleRel x . unitVector) . getLineVecs
 
 -- | Given a multiple of the /direction vector/ (this is /not/ distance unless
 -- the direction vector is a unit vector), calculates that point.
-alongLine :: (Num a, Geometry rel pt ln) => a -> ln a -> pt a
+alongLine :: (Num a, Geometry rel pt ln, Eq a, Show a) => a -> ln a -> pt a
 alongLine a = uncurry plusDir . second (scaleRel a) . getLineVecs
 
 -- | Checks if the given point is on the given line (to within a small epsilon-tolerance).
 --  If it is, gives back the distance along the line (as a multiple of its direction
 -- vector) to the point in a Just wrapper.  If the point is not on the line, Nothing
 -- is returned.
-distAlongLine :: (Geometry rel pt ln, Ord a, Floating a) => pt a -> ln a -> Maybe a
+distAlongLine :: (Geometry rel pt ln, Ord a, Floating a, Show a) => pt a -> ln a -> Maybe a
 distAlongLine pt ln
   = if sameDirection lnDir fromStart
       then Just $ mag fromStart
@@ -124,7 +124,7 @@ distAlongLine pt ln
     lnDir = getLineDir ln
 
 -- | Checks if the given point is on the given line (to within a small epsilon-tolerance).
-isOnLine :: (Geometry rel pt ln, Ord a, Floating a) => pt a -> ln a -> Bool
+isOnLine :: (Geometry rel pt ln, Ord a, Floating a, Show a) => pt a -> ln a -> Bool
 isOnLine pt ln = sameDirection lnDir fromStart
   where
     fromStart = pt `fromPt` getLineStart ln
@@ -134,7 +134,7 @@ isOnLine pt ln = sameDirection lnDir fromStart
 -- distance along the line (as a multiple of the direction vector).  Since the
 -- nearest distance will be at a right-angle to the point, this is the same as
 -- projecting the point onto the line.
-nearestDistOnLine :: (Geometry rel pt ln, Ord a, Floating a) =>
+nearestDistOnLine :: (Geometry rel pt ln, Ord a, Floating a, Show a) =>
   pt a -> ln a -> a
 -- The nearest point on the line will be the one forming a right-angle triangle
 -- between the line and the point.  We can use the dot product to project the point
@@ -150,7 +150,7 @@ nearestDistOnLine pt ln
 
 -- | Finds the nearest point on the line to the given point, and gives back the
 -- point.
-nearestPointOnLine :: (Geometry rel pt ln, Ord a, Floating a) =>
+nearestPointOnLine :: (Geometry rel pt ln, Ord a, Floating a, Show a) =>
   pt a -> ln a -> pt a
 nearestPointOnLine pt ln = nearestDistOnLine pt ln `alongLine` ln
 
@@ -158,7 +158,7 @@ nearestPointOnLine pt ln = nearestDistOnLine pt ln `alongLine` ln
 -- if the line is parallel to the YZ plane (in 2D, if the X component of the line
 -- is zero).  The value returned is a multiple of the direction vector of the line,
 -- which will only be the same as distance if the direction vector is a unit vector.
-valueAtX :: (Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a)
+valueAtX :: (Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a, Eq a)
   => ln a -> a -> Maybe a
 valueAtX l tgt
   | xd == 0 = Nothing
@@ -171,7 +171,7 @@ valueAtX l tgt
 -- if the line is parallel to the XZ plane (in 2D, if the Y component of the line
 -- is zero).  The value returned is a multiple of the direction vector of the line,
 -- which will only be the same as distance if the direction vector is a unit vector.
-valueAtY :: (Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a)
+valueAtY :: (Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a, Eq a)
   => ln a -> a -> Maybe a
 valueAtY l tgt
   | yd == 0 = Nothing
@@ -184,7 +184,7 @@ valueAtY l tgt
 -- if the line is parallel to the XY plane. The value returned is a multiple
 -- of the direction vector of the line, which will only be the same as
 -- distance if the direction vector is a unit vector.
-valueAtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a)
+valueAtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a, Eq a)
   => ln a -> a -> Maybe a
 valueAtZ l tgt
   | zd == 0 = Nothing
@@ -195,12 +195,12 @@ valueAtZ l tgt
 
 -- | pointAtX (and the Y and Z equivalents) are wrappers around 'valueAtX' (and
 -- similar) that give back the point rather than distance along the line.
-pointAtX, pointAtY :: (Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a)
+pointAtX, pointAtY :: (Show a, Geometry rel pt ln, Coord2 rel, Coord2 pt, Fractional a, Eq a)
   => ln a -> a -> Maybe (pt a)
 pointAtX l = fmap (flip alongLine l) . valueAtX l
 pointAtY l = fmap (flip alongLine l) . valueAtY l
 
-pointAtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a)
+pointAtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a, Eq a, Show a)
   => ln a -> a -> Maybe (pt a)
 pointAtZ l = fmap (flip alongLine l) . valueAtZ l
 

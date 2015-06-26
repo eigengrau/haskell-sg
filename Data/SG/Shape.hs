@@ -77,7 +77,7 @@ data Shape' a
        deriving (Show, Read, Eq, Ord)
 
 -- | Moves a shape by a given vector (by moving the centre).
-moveShape :: Num a => Rel2' a -> Shape' a -> Shape' a
+moveShape :: (Num a, Show a, Eq a) => Rel2' a -> Shape' a -> Shape' a
 moveShape x s = s {shapeCentre = shapeCentre s `plusDir` x}
 
 -- | Given an angle in /radians/, rotates the shape by that angle in an anti-clockwise
@@ -103,7 +103,7 @@ pts (Point2 (x, y)) (adjX, adjY) = (Point2 (x - adjX, y - adjY), Point2 (x + adj
 
 -- | Gives back the bounding box of a shape in terms of the minimum X-Y and
 -- the maximum X-Y corners of the bounding box.
-boundingBox :: (Num a, Ord a) => Shape' a -> (Point2' a, Point2' a)
+boundingBox :: (Show a, Num a, Ord a) => Shape' a -> (Point2' a, Point2' a)
 boundingBox (Circle c r) = pts c (r, r)
 boundingBox (Rectangle c (w, h)) = pts c (w, h)
 boundingBox (Polygon p ps)
@@ -123,7 +123,7 @@ between (l, h) x = l <= x && x <= h
 -- will either be no intersections or two (which could be the same point).
 -- The returned value is distance along the line in multiples of the direction
 -- vector (the return value is the same idea as 'intersectLineCircle').
-intersectLineShape :: forall a. (Floating a, Ord a) => Line2' a -> Shape' a -> Maybe (a, a)
+intersectLineShape :: forall a. (Floating a, Ord a, Show a) => Line2' a -> Shape' a -> Maybe (a, a)
 -- For circle, use existing function:
 intersectLineShape l (Circle c r) = intersectLineCircle l (c, r)
 -- For rectangle, use axis alignment:
@@ -169,7 +169,7 @@ intersectLineShape l (Polygon c ps)
 --
 -- This function includes an initial quick test, followed by a more detailed test
 -- if necessary.
-overlap :: (Floating a, Ord a) => Shape' a -> Shape' a -> Maybe (Rel2' a, Rel2' a)
+overlap :: (Floating a, Ord a, Show a) => Shape' a -> Shape' a -> Maybe (Rel2' a, Rel2' a)
 overlap a b
   | not (possibleOverlap a b) = Nothing
   | otherwise = detailedOverlap a b
@@ -179,7 +179,7 @@ overlap a b
 -- If it returns False, there is definitely no overlap.  If it returns True, there
 -- might be some overlap.  For two circles, radiuses are checked (and the answer is
 -- always accurate), for any other combination of shapes it checks bounding boxes.
-possibleOverlap :: (Floating a, Ord a) => Shape' a -> Shape' a -> Bool
+possibleOverlap :: (Floating a, Ord a, Show a) => Shape' a -> Shape' a -> Bool
 possibleOverlap (Circle ca ra) (Circle cb rb)
   = magSq (ca `fromPt` cb) <= ((ra+rb)*(ra+rb))
 possibleOverlap a b
@@ -223,7 +223,7 @@ pairsInLoop xs = pairs' xs
 
 -- | Collects a list of (unit-vector) axes perpendicular to all the edges of the
 -- polygon, pointed outwards.  The list will be empty for circles.
-collectAxes :: (Floating a, Ord a) => Shape' a -> [Rel2' a]
+collectAxes :: (Floating a, Ord a, Show a) => Shape' a -> [Rel2' a]
 collectAxes (Circle {}) = []
 collectAxes (Polygon _ ps) = map unitVector [perpendicular2 (a + b) | (a,b) <- pairsInLoop ps]
 collectAxes (Rectangle {}) = map (flip Rel2 1) [(-1,0), (1,0), (0, -1), (0, 1)]
@@ -240,12 +240,12 @@ polygonPoints (Polygon _ ps) = ps
 
 -- | Given a shape, gets a list of points that make up the vertices of the
 -- shape.  For circles, this list will be empty.
-shapePoints :: Num a => Shape' a -> [Point2' a]
+shapePoints :: (Num a, Show a, Eq a) => Shape' a -> [Point2' a]
 shapePoints s = map (shapeCentre s `plusDir`) (polygonPoints s)
 
 -- | Gets a list of lines representing each side of the shape (headed clockwise).
 --  For circles, the list will be empty.
-polygonLines :: (Floating a) => Shape' a -> [Line2' a]
+polygonLines :: (Floating a, Show a, Eq a) => Shape' a -> [Line2' a]
 polygonLines s
   = map (uncurry lineTo)
       . pairsInLoop . map (shapeCentre s `plusDir`)
@@ -254,7 +254,7 @@ polygonLines s
 -- Gives back the reflected unit vector for each shape's angle away from the other.
 -- returns Nothing if there was no collision after all.  You should only call this
 -- if quickOverlap returned True.
-detailedOverlap :: forall a. (Num a, Ord a, Floating a) => Shape' a -> Shape' a -> Maybe (Rel2' a, Rel2' a)
+detailedOverlap :: forall a. (Num a, Ord a, Show a, Floating a) => Shape' a -> Shape' a -> Maybe (Rel2' a, Rel2' a)
 detailedOverlap (Circle pa _) (Circle pb _)
 -- Rely on quickOverlap having been called:
   = let a_min_b = pa `fromPt` pb in Just (unitVector a_min_b, unitVector $ negate a_min_b)

@@ -159,7 +159,7 @@ perpendicular2 (Rel2 (x,y) m) = Rel2 (-y, x) m
 -- first parameter.  An example:
 --
 -- > makeRel2 (-3, -4) `reflectAgainst2` makeRel2 (0,1) == makeRel2 (-3, 4)
-reflectAgainst2 :: (Floating a, Ord a) => Rel2' a -> Rel2' a -> Rel2' a
+reflectAgainst2 :: (Floating a, Ord a, Show a) => Rel2' a -> Rel2' a -> Rel2' a
 reflectAgainst2 v n = alongNormal + alongSurface
   where
     n' = unitVector n
@@ -177,7 +177,7 @@ reflectAgainst2 v n = alongNormal + alongSurface
 --
 -- > makeRel2 (-3, -4) `reflectAgainstIfNeeded2` makeRel2 (0,1) == makeRel2 (-3, 4)
 -- > makeRel2 (-3, 4) `reflectAgainstIfNeeded2` makeRel2 (0,1) == makeRel2 (-3, 4)
-reflectAgainstIfNeeded2 :: (Floating a, Ord a) => Rel2' a -> Rel2' a -> Rel2' a
+reflectAgainstIfNeeded2 :: (Floating a, Ord a, Show a) => Rel2' a -> Rel2' a -> Rel2' a
 reflectAgainstIfNeeded2 v n
   | towardsComponent < 0 = alongNormal + alongSurface
   | otherwise = v
@@ -249,7 +249,7 @@ data Line2' a = Line2 {getLineStart2 :: (Point2' a) , getLineDir2 :: (Rel2' a)}
 -- Note that this function assumes the lines are infinite.  If you want to check
 -- for the intersection of two finite lines, check if the two parts of the result
 -- pair are both in the range 0 to 1 inclusive.
-intersectLines2 :: Fractional a => Line2' a -> Line2' a -> Maybe (a, a)
+intersectLines2 :: (Fractional a, Eq a) => Line2' a -> Line2' a -> Maybe (a, a)
 intersectLines2 (Line2 (Point2 (x,y)) (Rel2 (xd,yd) _)) (Line2 (Point2 (x',y')) (Rel2 (xd',yd') _))
   | a == 0 = Nothing
   | otherwise = Just $ (t, t')
@@ -262,7 +262,7 @@ intersectLines2 (Line2 (Point2 (x,y)) (Rel2 (xd,yd) _)) (Line2 (Point2 (x',y')) 
 -- the second list, and how far along that is each line.  That is, this is a bit
 -- like mapMaybe composed with intersectLines2 on all pairings of a line from the
 -- first list and a line from the second list.
-findAllIntersections2 :: Fractional a => ([Line2' a], [Line2' a]) -> [((Line2' a, a), (Line2' a, a))]
+findAllIntersections2 :: (Fractional a, Eq a) => ([Line2' a], [Line2' a]) -> [((Line2' a, a), (Line2' a, a))]
 findAllIntersections2 (as, bs)
   = catMaybes [ case intersectLines2 a b of
                   Just (ad, bd) -> Just ((a,ad), (b,bd))
@@ -311,6 +311,6 @@ intersectLineCircle (Line2 (Point2 (lx, ly)) (Rel2 (xd, yd) m))
       c = (lx - cx)*(lx - cx) + (ly - cy)*(ly - cy) - r*r
 
 -- | Like 'pointAtZ', but returns a 2D vector instead of a 3D vector
-point2AtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a)
+point2AtZ :: (Geometry rel pt ln, Coord3 rel, Coord3 pt, Fractional a, Show a, Eq a)
   => ln a -> a -> Maybe (Point2' a)
 point2AtZ l = fmap (Point2 . (getX &&& getY) . flip alongLine l) . valueAtZ l
